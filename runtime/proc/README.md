@@ -71,6 +71,8 @@ gdb main
 
 * 1.初始m0,g0,调度器
 * 2.CALL	runtime·newproc(SB) 启动g0
+* 3.init函数执行,gc开始,main函数执行开始
+
 
         func main() {
             g := getg() // 当前的g=g0
@@ -114,3 +116,8 @@ gdb main
                 *x = 0
             }
         }
+
+关键点:
+
+go的进程里最开始启动了m0,g0,main函数由g0,m0来执行的,gc由新的g并发执行，
+程序运行时会不断的通过newproc启动新的g

@@ -64,7 +64,6 @@ out hello world! 6129484611666145821 n=32
 这个fd就是注册进epoll的一个网络描述符，epoll_wait时，每次发现新的事件就会调用对应fd的
 回调函数进行执行。
 
-# todo epoll的具体实现及gopark原理
 
 ## epoll
 四个关键函数

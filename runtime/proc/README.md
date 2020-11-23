@@ -71,3 +71,47 @@ gdb main
 
 *   1.初始m0,g0,调度器
 *   2. CALL	runtime·newproc(SB) 启动g0
+
+
+    func main() {
+        g := getg() // 当前的g=g0
+        g.m.g0.racectx = 0
+        lockOSThread() // 锁住当前线程，防止重复初始化main
+        if g.m != &m0 {
+            throw("runtime.main not on m0")
+        }
+    
+        doInit(&runtime_inittask) // 执行完所有package下的init函数
+        if nanotime() == 0 {
+            throw("nanotime returning zero")
+        }
+    
+        // Defer unlock so that runtime.Goexit during init does the unlock too.
+        needUnlock := true
+        defer func() {
+            if needUnlock {
+                unlockOSThread()
+            }
+        }()
+    
+        // Record when the world started.
+        runtimeInitTime = nanotime()
+    
+        gcenable() // 开启gc相关的goroutine
+        if iscgo {
+            // cgo需要额外处理
+        }
+    
+        doInit(&main_inittask)
+        unlockOSThread()
+  
+        // 用户编写的main函数，在此处开始执行
+        fn := main_main // make an indirect call, as the linker doesn't know the address of the main package when laying down the runtime
+        fn()
+       
+        exit(0)
+        for {
+            var x *int32
+            *x = 0
+        }
+    }

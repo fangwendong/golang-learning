@@ -71,6 +71,8 @@
 
 ## chansend
 
+![avatar](https://github.com/fangwendong/golang-learning/blob/master/runtime/channel/images/chan_send.png)
+
     func chansend(c *hchan, ep unsafe.Pointer, block bool, callerpc uintptr) bool {
         // 如果c==nil，gopark当前的g,让出p
         if c == nil {

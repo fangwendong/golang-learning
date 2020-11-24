@@ -121,3 +121,6 @@ gdb main
 
 go的进程里最开始启动了m0,g0,main函数由g0,m0来执行的,gc由新的g并发执行，
 程序运行时会不断的通过newproc启动新的g
+
+## 2.GMP
+

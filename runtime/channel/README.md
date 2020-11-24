@@ -27,3 +27,5 @@
     	first *sudog
     	last  *sudog
     }
+    
+![avatar](https://github.com/fangwendong/golang-learning/blob/master/runtime/channel/images/channel.png)

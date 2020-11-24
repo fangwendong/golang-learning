@@ -36,38 +36,40 @@
 * 3.通过传参chantype和size对hchan进行赋值
 
 
-    func makechan(t *chantype, size int) *hchan {
-        elem := t.elem
-        // 申请的地址长度不能超过maxAlloc
-        mem, overflow := math.MulUintptr(elem.size, uintptr(size))
-        if overflow || mem > maxAlloc-hchanSize || size < 0 {
-            panic(plainError("makechan: size out of range"))
+
+        func makechan(t *chantype, size int) *hchan {
+            elem := t.elem
+            // 申请的地址长度不能超过maxAlloc
+            mem, overflow := math.MulUintptr(elem.size, uintptr(size))
+            if overflow || mem > maxAlloc-hchanSize || size < 0 {
+                panic(plainError("makechan: size out of range"))
+            }
+
+            var c *hchan
+            switch {
+            case mem == 0:
+                // Queue or element size is zero.
+                c = (*hchan)(mallocgc(hchanSize, nil, true))
+                // Race detector uses this location for synchronization.
+                c.buf = c.raceaddr()
+            case elem.ptrdata == 0:
+                // Elements do not contain pointers.
+                // Allocate hchan and buf in one call.
+                c = (*hchan)(mallocgc(hchanSize+mem, nil, true))
+                c.buf = add(unsafe.Pointer(c), hchanSize)
+            default:
+                // Elements contain pointers.
+                c = new(hchan)
+                c.buf = mallocgc(mem, elem, true)
+            }
+
+            c.elemsize = uint16(elem.size)
+            c.elemtype = elem
+            c.dataqsiz = uint(size)
+
+            return c
         }
-    
-        var c *hchan
-        switch {
-        case mem == 0:
-            // Queue or element size is zero.
-            c = (*hchan)(mallocgc(hchanSize, nil, true))
-            // Race detector uses this location for synchronization.
-            c.buf = c.raceaddr()
-        case elem.ptrdata == 0:
-            // Elements do not contain pointers.
-            // Allocate hchan and buf in one call.
-            c = (*hchan)(mallocgc(hchanSize+mem, nil, true))
-            c.buf = add(unsafe.Pointer(c), hchanSize)
-        default:
-            // Elements contain pointers.
-            c = new(hchan)
-            c.buf = mallocgc(mem, elem, true)
-        }
-    
-        c.elemsize = uint16(elem.size)
-        c.elemtype = elem
-        c.dataqsiz = uint(size)
-    
-        return c
-    }
+
 
 ## chansend
 

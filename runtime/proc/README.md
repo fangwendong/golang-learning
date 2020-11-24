@@ -124,3 +124,4 @@ go的进程里最开始启动了m0,g0,main函数由g0,m0来执行的,gc由新的
 
 ## 2.GMP
 
+![avatar](https://github.com/fangwendong/golang-learning/blob/main/runtime/proc/images/gmp.png)

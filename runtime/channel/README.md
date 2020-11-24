@@ -173,3 +173,98 @@
         releaseSudog(mysg)
         return true
     }
+
+## chanrecv
+
+recv过程和send过程基本上类似，流程图参考上面send过程
+
+    func chanrecv(c *hchan, ep unsafe.Pointer, block bool) (selected, received bool) {
+        // c=nil时gopark，与send一样
+        if c == nil {
+            if !block {
+                return
+            }
+            gopark(nil, nil, waitReasonChanReceiveNilChan, traceEvGoStop, 2)
+            throw("unreachable")
+        }
+        
+        // 非阻塞时，如果不满足消费channel条件直接结束函数
+        if !block && (c.dataqsiz == 0 && c.sendq.first == nil ||
+            c.dataqsiz > 0 && atomic.Loaduint(&c.qcount) == 0) &&
+            atomic.Load(&c.closed) == 0 {
+            return
+        }
+    
+        lock(&c.lock)
+        // c被关闭了，如果buf里没有数据直接返回
+        if c.closed != 0 && c.qcount == 0 {
+            unlock(&c.lock)
+            if ep != nil {
+                typedmemclr(c.elemtype, ep)
+            }
+            return true, false
+        }
+        // sendq不为空时，出队sg,直接将sg发送的数据拷贝至ep
+        if sg := c.sendq.dequeue(); sg != nil {
+            recv(c, sg, ep, func() { unlock(&c.lock) }, 3)
+            return true, true
+        }
+    
+        // buf不为空时，从buf队列获取数据，拷贝至ep
+        if c.qcount > 0 {
+            // Receive directly from queue
+            qp := chanbuf(c, c.recvx)
+            if ep != nil {
+                typedmemmove(c.elemtype, ep, qp)
+            }
+            typedmemclr(c.elemtype, qp)
+            c.recvx++
+            if c.recvx == c.dataqsiz {
+                c.recvx = 0
+            }
+            c.qcount--
+            unlock(&c.lock)
+            return true, true
+        }
+        // buf和sendq队列都为空时,gopark当前g,等待
+        gp := getg()
+        mysg := acquireSudog()
+        mysg.releasetime = 0
+        if t0 != 0 {
+            mysg.releasetime = -1
+        }
+        // No stack splits between assigning elem and enqueuing mysg
+        // on gp.waiting where copystack can find it.
+        mysg.elem = ep
+        mysg.waitlink = nil
+        gp.waiting = mysg
+        mysg.g = gp
+        mysg.isSelect = false
+        mysg.c = c
+        gp.param = nil
+        // g加入recvq
+        c.recvq.enqueue(mysg)
+        gopark(chanparkcommit, unsafe.Pointer(&c.lock), waitReasonChanReceive, traceEvGoBlockRecv, 2)
+    
+        // someone woke us up
+        if mysg != gp.waiting {
+            throw("G waiting list is corrupted")
+        }
+        gp.waiting = nil
+        gp.activeStackChans = false
+        if mysg.releasetime > 0 {
+            blockevent(mysg.releasetime-t0, 2)
+        }
+        closed := gp.param == nil
+        gp.param = nil
+        mysg.c = nil
+        releaseSudog(mysg)
+        return true, !closed
+    }
+
+## 总结
+
+* 1.程序中的channel对应一个hchan的对象，有缓冲的channnel和没有缓冲的channel在send和recv时有挺大区别
+* 2.channel=nil时,send和recv的goroutine都会gopark让出资源一直阻塞下去
+* 3.send/recv时会优先从队列recvq/sendq中的g拷贝数据，如果recvq/sendq为空才会从buf队列拷贝数据，如果前面逻辑走完没有拿到现成的数据，就会将当前的g加入队列recvq/sendq,并且gopark住当前的g，等待被唤醒
+* 4.channel被关闭后,send会导致panic,recv则看buf中是否还有数据，如果有数据则拷贝buf中的数据，如果没有数据直接返回false

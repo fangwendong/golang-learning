@@ -38,8 +38,8 @@ dp[1][1]=1
 * 当word1[i]=word2[j]时，不用做任何调整,dp[i][j]=dp[i-1][j-1]
 * 当word1[i]!=word2[j]时，需要调整保证word1[i]=word2[j]
 * 1. word1[:i]末尾插入一个字符word2[j],需要先将word1[:i]转换成word2[:j-1], dp[i][j]= dp[i][j-1]+1
-* 2. 把word1[i]替换成word2[j],需要先将word1[:i-1]转换成word2[:j-1], dp[i][j]=dp[i-1][j-1]+1
-* 3. 删除word1[i]，需要先将word[:i-1]转换成word2[:j], dp[i][j]=dp[i-1][j]+1
+  2. 把word1[i]替换成word2[j],需要先将word1[:i-1]转换成word2[:j-1], dp[i][j]=dp[i-1][j-1]+1
+  3. 删除word1[i]，需要先将word[:i-1]转换成word2[:j], dp[i][j]=dp[i-1][j]+1
 
 所以，
     

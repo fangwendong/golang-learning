@@ -211,3 +211,95 @@ dp[i]=1+max{dp[i-k]}(a[i]>a[i-k], k from 1 to i)
 
  
 进阶的方法要将时间复杂度优化到O(nlogn),显然需要用到二分查找，在此不赘述。
+
+## 题目四：两个子序列的最大点积[leetcode-1458](https://leetcode-cn.com/problems/max-dot-product-of-two-subsequences/)
+### 问题描述
+给你两个数组 nums1 和 nums2 。
+
+请你返回 nums1 和 nums2 中两个长度相同的 非空 子序列的最大点积。
+
+数组的非空子序列是通过删除原数组中某些元素（可能一个也不删除）后剩余数字组成的序列，
+但不能改变数字间相对顺序。比方说，[2,3,5] 是 [1,2,3,4,5] 的一个子序列而 [1,5,3] 不是。
+
+示例 1：
+
+    输入：nums1 = [2,1,-2,5], nums2 = [3,0,-6]
+    输出：18
+    解释：从 nums1 中得到子序列 [2,-2] ，从 nums2 中得到子序列 [3,-6] 。
+    它们的点积为 (2*3 + (-2)*(-6)) = 18 。
+
+示例 2：
+
+    输入：nums1 = [3,-2], nums2 = [2,-6,7]
+    输出：21
+    解释：从 nums1 中得到子序列 [3] ，从 nums2 中得到子序列 [7] 。
+    它们的点积为 (3*7) = 21 。
+    
+示例 3：
+
+    输入：nums1 = [-1,-1], nums2 = [1,1]
+    输出：-1
+    解释：从 nums1 中得到子序列 [-1] ，从 nums2 中得到子序列 [1] 。
+    它们的点积为 -1 。
+ 
+
+提示：
+
+    1 <= nums1.length, nums2.length <= 500
+    -1000 <= nums1[i], nums2[i] <= 100
+ 
+
+点积：
+
+    定义 a = [a1, a2,…, an] 和 b = [b1, b2,…, bn] 的点积为：
+
+    a.b=a1b1+a2b2+...+anbn
+
+### 定义dp数组含义
+* dp[i][j]表示 [a1,a2,...,ai] 和[b1,b2,...,bj]两个数组的非空子序列(以ai,bj结尾)的最大点积，为了让dp[i-1][j-1]和dp[i][j]
+建立关系，还得要求子序列以ai,bj结尾
+* maxRangeDP[i][j]表示[a1,a2,...,ai] 和[b1,b2,...,bj]两个数组的子序列(以ai,bj结尾)的最大点积，空序列点击为0
+
+### 状态转换方程
+* 由于子序列要求非空，则dp[1][1]=a1*b1,而不是0
+* 下标从2开始计算dp，以a[i],b[j]结尾的子序列要想点积最大，则要求前面的序列点击最大，即 dp[i][j] = ai*bj + maxRangeDP[i-1][j-1]
+* maxRangeDP[i][j] = max{maxRangeDP[i-1][j-1], maxRangeDP[i][j-1], maxRangeDP[i-1][j], dp[i][j]}
+
+### code
+
+    func maxDotProduct(nums1 []int, nums2 []int) int {
+        l1 := len(nums1)
+        l2 := len(nums2)
+    
+        // 构建dp[l1][l2]
+        dp := make([][]int, l1+1)
+        maxRangeDP := make([][]int, l1+1) // 表示a[1..i]到b[1..j]子序列点击最大值，空序列点击为0
+        for i := 0; i <= l1; i++ {
+            dp[i] = make([]int, l2+1)
+            maxRangeDP[i] = make([]int, l2+1)
+        }
+    
+        max := nums1[0] * nums2[0] // 表示a[]和b[]中非空子序列最大点积
+        // 根据状态转换方程给dp赋值
+        for i := 1; i <= l1; i++ {
+            for j := 1; j <= l2; j++ {
+                maxLeftDot := maxRangeDP[i-1][j-1] // maxLeftDot表示a[1..i],b[1...j]中子序列最大点积,可以为空(maxLeftDot=0)
+                dp[i][j] = nums1[i-1] * nums2[j-1] // 以nums1[i]和nums2[j]结尾的子序列，必须带上他俩的点积
+                dp[i][j] += maxLeftDot
+                maxRangeDP[i][j] = maxF(maxRangeDP[i-1][j-1], maxRangeDP[i][j-1], maxRangeDP[i-1][j], dp[i][j])
+                max = maxF(max, dp[i][j])
+            }
+        }
+    
+        return max
+    }
+    
+    func maxF(args ...int) int {
+        m := args[0]
+        for i := 1; i < len(args); i++ {
+            if args[i] > m {
+                m = args[i]
+            }
+        }
+        return m
+    }

@@ -49,6 +49,7 @@ dp[1][1]=1
         dp[i][j]=min{dp[i][j-1]+1,dp[i-1][j-1]+1,dp[i-1][j]+1}
 
 就这样完成了状态方程，可以直接撸代码了
+### code
 
     func minDistance(word1 string, word2 string) int {
         l1 := len(word1)
@@ -88,4 +89,65 @@ dp[1][1]=1
         }
         return m
     }
+
+## 题目二：最长重复子数组[leetcode](https://leetcode-cn.com/problems/maximum-length-of-repeated-subarray/)
+
+给两个整数数组 A 和 B ，返回两个数组中公共的、长度最长的子数组的长度。
+
+示例：
+
+    输入：
+    A: [1,2,3,2,1]
+    B: [3,2,1,4,7]
+    输出：3
+    解释：
+    长度最长的公共子数组是 [3, 2, 1] 。
+ 
+
+提示：
+
+* 1 <= len(A), len(B) <= 1000
+* 0 <= A[i], B[i] < 100
+
+### 定义dp数组含义
+
+可以从左侧开始，两个数组各截取1段, A[:i]和B[:j]最长的公共子数组叫dp[i][j]，并且满足条件公共子数组在A,B下标为i,j,这样
+可以保证dp[i][j]和dp[i-1][j-1]可以产生联系，便于输出状态转换方程
+
+* i=1,j=2时,[1],[3,2]对应的公共子数组为空数组[]
+* i=3,j=1时,[1,2,3],[3]对应的公共子数组为[3]
+
+最终的最长公共子数组长度为max{dp[0...i][0...j]}
+
+### 状态转换方程
+* 初始条件dp[0][j]=0,dp[i][0]=0
+* 如果A[i]!=B[j],不可能存在以i,j结尾的公共子数组，所以dp[i][j]=0
+* 如果A[i]=B[j], dp[i][j]=dp[i-1][j-1]+1
+
+### code
+
+    func findLength(A []int, B []int) int {
+        l1 := len(A)
+        l2 := len(B)
+        // 初始化dp数组
+        dp := make([][]int, l1+1)
+        for i := 0; i <= l1; i++ {
+            dp[i] = make([]int, l2+1)
+        }
+        
+        // 从上到下，从左到右赋值,maxLength记录最大的公共子数组长度
+        var maxLength int
+        for i := 1; i <= l1; i++ {
+            for j := 1; j <= l2; j++ {
+                if A[i-1] == B[j-1] {
+                    dp[i][j] = dp[i-1][j-1] + 1
+                    if dp[i][j] > maxLength {
+                        maxLength = dp[i][j]
+                    }
+                }
+            }
+        }
+        return maxLength
+    }
+
 

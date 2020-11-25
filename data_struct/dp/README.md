@@ -4,7 +4,7 @@
 * 2.根据递推式写出dp，通常是对二维数组dp[m][n]进行从上到下从做到右的赋值
 * 3.赋值完整个dp数组之后，即可得到最终结果
 
-## 题目一：编辑距离
+## 题目一：编辑距离[leetcode-72](https://leetcode-cn.com/problems/edit-distance/)
 
 ### 问题描述
 
@@ -46,6 +46,46 @@ dp[1][1]=1
     if word1[i]==word2[j]
         dp[i][j]=dp[i-1][j-1]
     else 
-        dp[i][j]=min{dp[i][j]= dp[i][j-1]+1,dp[i][j]=dp[i-1][j-1]+1,dp[i][j]=dp[i-1][j]+1}
+        dp[i][j]=min{dp[i][j-1]+1,dp[i-1][j-1]+1,dp[i-1][j]+1}
 
-就这样完成了状态方程
+就这样完成了状态方程，可以直接撸代码了
+
+    func minDistance(word1 string, word2 string) int {
+        l1 := len(word1)
+        l2 := len(word2)
+        // 构建dp[l1][l2]
+        dp := make([][]int, l1+1)
+        for i := 0; i <= l1; i++ {
+            dp[i] = make([]int, l2+1)
+        }
+        // 初始化边界数据i=0,j=0
+        for j := 0; j <= l2; j++ {
+            dp[0][j] = j
+        }
+        for i := 0; i <= l1; i++ {
+            dp[i][0] = i
+        }
+    
+        // 从左到右，从上到下根据状态方程赋值
+        for i := 1; i <= l1; i++ {
+            for j := 1; j <= l2; j++ {
+                if word1[i-1] == word2[j-1] {
+                    dp[i][j] = dp[i-1][j-1]
+                } else {
+                    dp[i][j] = min(dp[i][j-1]+1, dp[i-1][j-1]+1, dp[i-1][j]+1)
+                }
+            }
+        }
+        return dp[l1][l2]
+    }
+    
+    func min(args ...int) int {
+        m := args[0]
+        for i := 1; i < len(args); i++ {
+            if args[i] < m {
+                m = args[i]
+            }
+        }
+        return m
+    }
+

@@ -91,6 +91,7 @@ dp[1][1]=1
     }
 
 ## 题目二：最长重复子数组[leetcode](https://leetcode-cn.com/problems/maximum-length-of-repeated-subarray/)
+### 问题描述
 
 给两个整数数组 A 和 B ，返回两个数组中公共的、长度最长的子数组的长度。
 
@@ -151,3 +152,61 @@ dp[1][1]=1
     }
 
 
+## 题目三：最长上升子序列[leetcode-300](https://leetcode-cn.com/problems/longest-increasing-subsequence/)
+
+### 问题描述
+
+给定一个无序的整数数组，找到其中最长上升子序列的长度。
+
+示例:
+
+    输入: [10,9,2,5,3,7,101,18]
+    输出: 4 
+    解释: 最长的上升子序列是 [2,3,7,101]，它的长度是 4。
+    
+说明:
+
+* 可能会有多种最长上升子序列的组合，你只需要输出对应的长度即可。
+* 你算法的时间复杂度应该为 O(n2) 。
+
+进阶: 你能将算法的时间复杂度降低到 O(n log n) 吗?
+
+### 定义dp数组含义
+很容易想到使用dp[i]表示以a[i]结尾的最长上升子数组的长度，
+即dp[i]表示a[1...i]数组中最长升序的数组，最后一个元素是a[i]
+
+### 状态转换方程
+
+dp[i]=1+max{dp[i-k]}(a[i]>a[i-k], k from 1 to i)
+
+### code
+
+    func lengthOfLIS(nums []int) int {
+        l := len(nums)
+        // 长度=0时结果为0，长度为1时，结果为1
+        if l <= 1 {
+            return l
+        }
+        // 初始化dp数组
+        dp := make([]int, l+1)
+        max := 1
+        for i := 1; i <= l; i++ {
+            dp[i] = 1 // 算上自身
+            maxL := 0
+            // 从右往左遍历，查找元素小于nums[i]的最长子序列
+            for k := i - 1; k >= 1; k-- {
+                if nums[i-1] > nums[k-1] && maxL < dp[k] {
+                    maxL = dp[k]
+                }
+            }
+            dp[i] += maxL
+    
+            // 比较dp[i]的最大值
+            if max < dp[i] {
+                max = dp[i]
+            }
+        }
+        return max
+    }
+
+ 
